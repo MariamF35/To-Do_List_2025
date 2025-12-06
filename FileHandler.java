@@ -3,80 +3,65 @@ import java.util.*;
 
 public class FileHandler {
 
-    private static final String FILE_NAME = "login.csv";
+    private static final String FILE = "login.csv";
 
-    public static boolean validateLogin(String username, String password) {
-        try (BufferedReader br = new BufferedReader(new FileReader(FILE_NAME))) {
-            String line;
-
-            while ((line = br.readLine()) != null) {
-                String[] data = line.split(",");
-                if (data.length >= 2) {
-                    if (data[0].equals(username) && data[1].equals(password)) {
-                        return true;
-                    }
-                }
-            }
-
-        } catch (Exception e) {
-            System.out.println("Error reading login.csv: " + e.getMessage());
-        }
-        return false;
-    }
-
-    public static boolean checkUserExists(String username) {
-        try (BufferedReader br = new BufferedReader(new FileReader(FILE_NAME))) {
-            String line;
-
-            while ((line = br.readLine()) != null) {
-                String[] data = line.split(",");
-                if (data.length >= 1 && data[0].equals(username)) {
-                    return true;
-                }
-            }
-
-        } catch (Exception e) {
-            System.out.println("Error checking user: " + e.getMessage());
-        }
-        return false;
-    }
-
-    public static void signup(String username, String password) {
-        try (FileWriter fw = new FileWriter(FILE_NAME, true)) {
-            fw.write(username + "," + password + "\n");
-        } catch (Exception e) {
-            System.out.println("Error writing login.csv: " + e.getMessage());
-        }
-    }
-
-    public static boolean resetPassword(String username, String newPassword) {
+    public static void ensureFileExists() {
         try {
-            List<String> lines = new ArrayList<>();
-            boolean updated = false;
+            File f = new File(FILE);
+            if (!f.exists()) {
+                FileWriter fw = new FileWriter(f);
+                fw.write("username,password,email\n");
+                fw.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-            BufferedReader br = new BufferedReader(new FileReader(FILE_NAME));
+    public static List<String[]> readAll() {
+        ensureFileExists();
+        List<String[]> rows = new ArrayList<>();
+
+        try (BufferedReader br = new BufferedReader(new FileReader(FILE))) {
             String line;
+            br.readLine(); // Skip header
 
             while ((line = br.readLine()) != null) {
-                String[] data = line.split(",");
-                if (data[0].equals(username)) {
-                    lines.add(username + "," + newPassword);
-                    updated = true;
+                rows.add(line.split(","));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return rows;
+    }
+
+    public static void append(String username, String password, String email) {
+        ensureFileExists();
+        try (FileWriter fw = new FileWriter(FILE, true)) {
+            fw.write(username + "," + password + "," + email + "\n");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void updatePassword(String email, String newPass) {
+        List<String[]> rows = readAll();
+        try {
+            FileWriter fw = new FileWriter(FILE);
+            fw.write("username,password,email\n");
+
+            for (String[] r : rows) {
+                if (r[2].equals(email)) {
+                    fw.write(r[0] + "," + newPass + "," + r[2] + "\n");
                 } else {
-                    lines.add(line);
+                    fw.write(r[0] + "," + r[1] + "," + r[2] + "\n");
                 }
             }
-            br.close();
 
-            FileWriter fw = new FileWriter(FILE_NAME);
-            for (String l : lines) fw.write(l + "\n");
             fw.close();
 
-            return updated;
-
         } catch (Exception e) {
-            System.out.println("Error updating password: " + e.getMessage());
+            e.printStackTrace();
         }
-        return false;
     }
 }

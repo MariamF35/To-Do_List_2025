@@ -2,13 +2,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.time.*;
 import java.time.format.*;
-import java.util.*;
 
 public class ToDoFrame extends JFrame {
     private TaskManager manager = new TaskManager();
     private DefaultListModel<String> listModel = new DefaultListModel<>();
     private JList<String> taskList = new JList<>(listModel);
-    private boolean dark = false;
 
     public ToDoFrame(String username) {
         setTitle("To-Do List - " + username);
@@ -16,32 +14,32 @@ public class ToDoFrame extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        JButton toggleTheme = new JButton("Toggle Theme");
+        JButton toggleTheme = new JButton("Theme");
         toggleTheme.addActionListener(e -> switchTheme());
         add(toggleTheme, BorderLayout.NORTH);
 
         add(new JScrollPane(taskList), BorderLayout.CENTER);
 
-        JPanel panel = new JPanel();
+        JPanel p = new JPanel();
         JButton addBtn = new JButton("Add Task");
-        JButton completeBtn = new JButton("Mark Completed");
-        JButton dashBtn = new JButton("Show Dashboard");
+        JButton compBtn = new JButton("Complete");
+        JButton dashBtn = new JButton("Dashboard");
+
+        p.add(addBtn);
+        p.add(compBtn);
+        p.add(dashBtn);
+
+        add(p, BorderLayout.SOUTH);
 
         addBtn.addActionListener(e -> addTask());
-        completeBtn.addActionListener(e -> completeTask());
+        compBtn.addActionListener(e -> completeTask());
         dashBtn.addActionListener(e -> showDashboard());
-
-        panel.add(addBtn);
-        panel.add(completeBtn);
-        panel.add(dashBtn);
-
-        add(panel, BorderLayout.SOUTH);
 
         setLocationRelativeTo(null);
         setVisible(true);
-
-        new ReminderService(manager);
     }
+
+    private boolean dark = false;
 
     private void switchTheme() {
         dark = !dark;
@@ -53,73 +51,35 @@ public class ToDoFrame extends JFrame {
         taskList.setForeground(fg);
     }
 
-    private LocalDateTime parseDate(String input) {
-        String[] patterns = {
-            "dd-MM-yyyy HH:mm",
-            "dd-MM-yyyy",
-            "yyyy-MM-dd HH:mm",
-            "yyyy-MM-dd",
-            "dd/MM/yyyy",
-            "dd/MM/yyyy HH:mm",
-            "dd MMM yyyy",
-            "dd MMM yyyy HH:mm"
-        };
-
-        for (String pattern : patterns) {
-            try {
-                DateTimeFormatter f = DateTimeFormatter.ofPattern(pattern);
-                if (pattern.endsWith("HH:mm"))
-                    return LocalDateTime.parse(input, f);
-                else
-                    return LocalDate.parse(input, f).atTime(23, 59);
-            } catch (Exception ignored) {}
-        }
-
-        return null;
-    }
-
     private void addTask() {
-        String title = JOptionPane.showInputDialog(this, "Task name:");
-        if (title == null || title.isEmpty()) return;
+        String title = JOptionPane.showInputDialog("Task title:");
+        String deadline = JOptionPane.showInputDialog("Enter date (yyyy-MM-dd HH:mm):");
 
-        String deadlineStr = JOptionPane.showInputDialog(this, "Enter deadline:");
-        LocalDateTime dl = parseDate(deadlineStr);
+        LocalDateTime d = LocalDateTime.parse(deadline, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
 
-        if (dl == null) {
-            JOptionPane.showMessageDialog(this, "Invalid date!");
-            return;
-        }
+        int p = Integer.parseInt(JOptionPane.showInputDialog("Priority (1-5):"));
 
-        String priorityStr = JOptionPane.showInputDialog(this, "Priority (1-5):");
-        int pr = Integer.parseInt(priorityStr);
-
-        Task t = new Task(title, dl, pr);
-        manager.addTask(t);
-        refreshList();
+        manager.addTask(new Task(title, d, p));
+        refresh();
     }
 
     private void completeTask() {
-        int idx = taskList.getSelectedIndex();
-        if (idx == -1) return;
-
-        manager.completeTask(idx);
-        refreshList();
+        int i = taskList.getSelectedIndex();
+        if (i == -1) return;
+        manager.completeTask(i);
+        refresh();
     }
 
     private void showDashboard() {
-        double percent = manager.getCompletionPercentage();
-        JOptionPane.showMessageDialog(this,
-            "Completed: " + percent + "%\n" +
-            "Points: " + manager.getPoints());
+        JOptionPane.showMessageDialog(this, "Completed: " +
+                manager.getCompletionPercentage() + "%\nPoints: " + manager.getPoints());
     }
 
-    private void refreshList() {
+    private void refresh() {
         listModel.clear();
         for (Task t : manager.getTasksSorted()) {
-            listModel.addElement(
-                t.getTitle() + " | P:" + t.getPriority() + " | Due:" + t.getDeadline() +
-                (t.isCompleted() ? " ✔" : "")
-            );
+            listModel.addElement(t.getTitle() + " | P:" + t.getPriority() + " | Due:" + t.getDeadline() +
+                    (t.isCompleted() ? " ✔" : ""));
         }
     }
 }

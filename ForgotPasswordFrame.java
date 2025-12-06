@@ -1,41 +1,62 @@
 import javax.swing.*;
 import java.awt.*;
+import java.util.*;
 
 public class ForgotPasswordFrame extends JFrame {
 
-    JTextField usernameField;
-    JPasswordField newPasswordField;
-
     public ForgotPasswordFrame() {
         setTitle("Reset Password");
-        setSize(300, 150);
-        setLayout(new GridLayout(3, 2));
+        setSize(400, 250);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new GridLayout(5, 1));
 
-        add(new JLabel("Username:"));
-        usernameField = new JTextField();
-        add(usernameField);
-
-        add(new JLabel("New Password:"));
-        newPasswordField = new JPasswordField();
-        add(newPasswordField);
+        JTextField email = new JTextField();
+        JPasswordField newPass = new JPasswordField();
 
         JButton resetBtn = new JButton("Reset");
-        add(resetBtn);
+        JButton backBtn = new JButton("Back");
 
-        resetBtn.addActionListener(e -> reset());
+        add(new JLabel("Enter registered email:"));
+        add(email);
+        add(new JLabel("Enter new password:"));
+        add(newPass);
 
-        setVisible(true);
-    }
+        JPanel p = new JPanel();
+        p.add(resetBtn);
+        p.add(backBtn);
+        add(p);
 
-    void reset() {
-        String user = usernameField.getText();
-        String pass = new String(newPasswordField.getPassword());
+        resetBtn.addActionListener(e -> {
+            String em = email.getText();
+            String np = new String(newPass.getPassword());
 
-        if (FileHandler.resetPassword(user, pass)) {
-            JOptionPane.showMessageDialog(this, "Password Reset!");
+            boolean exists = false;
+
+            for (String[] r : FileHandler.readAll()) {
+                if (r[2].equals(em)) {
+                    exists = true;
+                    break;
+                }
+            }
+
+            if (!exists) {
+                JOptionPane.showMessageDialog(this, "Email not found!");
+                return;
+            }
+
+            FileHandler.updatePassword(em, np);
+
+            JOptionPane.showMessageDialog(this, "Password updated!");
             dispose();
-        } else {
-            JOptionPane.showMessageDialog(this, "User not found!");
-        }
+            new LoginFrame();
+        });
+
+        backBtn.addActionListener(e -> {
+            dispose();
+            new LoginFrame();
+        });
+
+        setLocationRelativeTo(null);
+        setVisible(true);
     }
 }
