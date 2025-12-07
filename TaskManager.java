@@ -1,8 +1,8 @@
 import java.util.*;
+import java.time.LocalDateTime;
 
 public class TaskManager {
     private List<Task> tasks = new ArrayList<>();
-    private int points = 0;
 
     public void addTask(Task t) {
         tasks.add(t);
@@ -10,7 +10,6 @@ public class TaskManager {
 
     public void completeTask(int i) {
         tasks.get(i).complete();
-        points += 10;
     }
 
     public List<Task> getTasksSorted() {
@@ -24,5 +23,31 @@ public class TaskManager {
         return (c * 100.0) / tasks.size();
     }
 
-    public int getPoints() { return points; }
+    public int getPoints() {
+        int total = 0;
+        for (Task t : tasks) {
+            total += t.calculatePoints();
+        }
+        return total;
+    }
+
+    public long getCompletedOnTimeCount() {
+        return tasks.stream().filter(t -> t.isCompleted() && t.isCompletedOnTime()).count();
+    }
+
+    public long getCompletedLateCount() {
+        return tasks.stream().filter(t -> t.isCompleted() && !t.isCompletedOnTime()).count();
+    }
+
+    public long getIncompleteCount() {
+        return tasks.stream().filter(t -> !t.isCompleted()).count();
+    }
+
+    public void setTasks(List<Task> taskList) {
+        this.tasks = taskList;
+    }
+
+    public List<Task> getTasks() {
+        return tasks;
+    }
 }

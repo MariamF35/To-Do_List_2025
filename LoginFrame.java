@@ -9,75 +9,76 @@ public class LoginFrame extends JFrame {
         setTitle("Login / Register");
         setSize(400, 300);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLayout(new GridLayout(4, 1));
+        setLayout(new GridLayout(6, 1));
 
         JLabel userLabel = new JLabel("Username:");
         JTextField userField = new JTextField();
 
+        JLabel passLabel = new JLabel("Password:");
+        JPasswordField passField = new JPasswordField();
+
         JButton loginBtn = new JButton("Login");
-        JButton registerBtn = new JButton("Register");
+        JButton registerBtn = new JButton("Sign Up");
+        JButton forgotBtn = new JButton("Forgot Password");
 
         add(userLabel);
         add(userField);
+        add(passLabel);
+        add(passField);
         add(loginBtn);
-        add(registerBtn);
+        JPanel bottom = new JPanel();
+        bottom.add(registerBtn);
+        bottom.add(forgotBtn);
+        add(bottom);
 
         // LOGIN BUTTON
         loginBtn.addActionListener(e -> {
             String username = userField.getText().trim();
+            String password = new String(passField.getPassword());
 
-            if (username.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Enter a username.");
+            if (username.isEmpty() || password.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Enter username and password.");
                 return;
             }
 
             // Read all users from CSV file
             List<String[]> rows = FileHandler.readAll();
 
-            boolean exists = false;
+            boolean found = false;
+            boolean passMatch = false;
             for (String[] row : rows) {
-                if (row[0].equals(username)) {
-                    exists = true;
+                if (row.length >= 2 && row[0].equals(username)) {
+                    found = true;
+                    if (row[1].equals(password)) passMatch = true;
                     break;
                 }
             }
 
-            if (exists) {
-                JOptionPane.showMessageDialog(this, "Login successful!");
-                new ToDoFrame(username);
-                dispose();
-            } else {
+            if (!found) {
                 JOptionPane.showMessageDialog(this, "User not found!");
-            }
-        });
-
-        // REGISTER BUTTON
-        registerBtn.addActionListener(e -> {
-            String username = userField.getText().trim();
-
-            if (username.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Enter a username.");
                 return;
             }
 
-            List<String[]> rows = FileHandler.readAll();
-
-            boolean exists = false;
-            for (String[] row : rows) {
-                if (row[0].equals(username)) {
-                    exists = true;
-                    break;
-                }
+            if (!passMatch) {
+                JOptionPane.showMessageDialog(this, "Incorrect password!");
+                return;
             }
 
-            if (exists) {
-                JOptionPane.showMessageDialog(this, "User already exists!");
-            } else {
-                FileHandler.append(username, "0", "0");
-                JOptionPane.showMessageDialog(this, "Registration successful!");
-                new ToDoFrame(username);
-                dispose();
-            }
+            JOptionPane.showMessageDialog(this, "Login successful!");
+            new ToDoFrame(username);
+            dispose();
+        });
+
+        // REGISTER BUTTON opens SignupFrame
+        registerBtn.addActionListener(e -> {
+            dispose();
+            new SignupFrame();
+        });
+
+        // FORGOT PASSWORD
+        forgotBtn.addActionListener(e -> {
+            dispose();
+            new ForgotPasswordFrame();
         });
 
         setLocationRelativeTo(null);
